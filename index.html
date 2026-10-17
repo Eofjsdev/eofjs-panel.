@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Eofjs · Instagram</title>
+<style>
+:root{--bg:#f3ebff;--card:#ffffff;--p:#642b96;--pt:#ffffff;--t:#241533;--m:#6f5f84;--line:#e2d5f2;--ok:#1f8a4c;--err:#c0392b;--warn:#b7791f}
+@media(prefers-color-scheme:dark){:root{--bg:#171021;--card:#241a33;--p:#b48be0;--pt:#171021;--t:#f1e9fb;--m:#a998bf;--line:#3a2b4f;--ok:#4cc27f;--err:#ff7a6b;--warn:#e6b450}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:12px 12px 80px}
+h1{font-size:20px;margin:6px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--m);margin:10px 0 4px}
+input,textarea,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--t);font:inherit}
+textarea{min-height:80px;resize:vertical}
+button{background:var(--p);color:var(--pt);border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--p);border:1px solid var(--p)}
+button.del{background:transparent;color:var(--err);border:1px solid var(--err);padding:6px 10px;font-size:13px}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px;align-items:center}
+.tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5}
+.tabs button{flex:1;background:transparent;color:var(--p);border:1px solid var(--p);padding:9px 4px;font-size:14px}
+.tabs button.on{background:var(--p);color:var(--pt)}
+.msg{font-size:14px;margin:8px 0;min-height:18px}
+.msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
+.small{font-size:13px;color:var(--m)}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.b-pendiente{color:var(--warn)}.b-publicado{color:var(--ok)}.b-error{color:var(--err)}.b-publicando{color:var(--m)}
+.bubble{padding:8px 10px;border-radius:12px;margin:4px 0;max-width:88%;word-wrap:break-word}
+.in{background:var(--line)}.out{background:var(--p);color:var(--pt);margin-left:auto}
+img.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1>Panel Instagram · eofjs.dev</h1>
+
+<div id="login" class="card">
+  <label for="key">Clave de administrador (ADMIN_KEY)</label>
+  <input id="key" type="password" autocomplete="off" placeholder="Pega tu clave">
+  <label class="row" style="margin-top:12px"><input id="rem" type="checkbox" style="width:auto"> Recordar en este teléfono</label>
+  <div class="msg" id="loginMsg"></div>
+  <button id="enter">Entrar</button>
+</div>
+
+<div id="app" class="hide">
+  <div class="tabs">
+    <button data-t="programar" class="on">Programar</button>
+    <button data-t="comentarios">Comentarios</button>
+    <button data-t="mensajes">Mensajes</button>
+  </div>
+
+  <section id="t-programar">
+    <div class="card">
+      <label for="murl">Enlace público de la imagen o video</label>
+      <input id="murl" type="url" placeholder="https://…/foto.jpg">
+      <p class="small">Debe ser un enlace directo y público (JPEG para fotos, MP4 para reels).</p>
+      <label for="mtype">Tipo</label>
+      <select id="mtype"><option value="IMAGE">Foto</option><option value="REELS">Reel (video)</option></select>
+      <label for="cap">Texto de la publicación</label>
+      <textarea id="cap" placeholder="Escribe el texto…"></textarea>
+      <label for="when">Fecha y hora</label>
+      <input id="when" type="datetime-local">
+      <div class="msg" id="pMsg"></div>
+      <button id="addPost">Programar</button>
+    </div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="sec" id="runNow">Publicar lo vencido ahora</button>
+      <button class="sec" id="reload1">Actualizar</button>
+    </div>
+    <div id="posts"></div>
+  </section>
+
+  <section id="t-comentarios" class="hide">
+    <button class="sec" id="reload2" style="margin-bottom:8px">Actualizar</button>
+    <div id="comments"></div>
+  </section>
+
+  <section id="t-mensajes" class="hide">
+    <p class="small">Instagram solo permite responder dentro de las 24 horas siguientes al mensaje de la persona.</p>
+    <button class="sec" id="reload3" style="margin-bottom:8px">Actualizar</button>
+    <div id="messages"></div>
+  </section>
+
+  <p style="text-align:center"><button class="sec" id="logout">Salir</button></p>
+</div>
+
+<script>
+const FN = "https://xeongtzcemodcpfdzqws.supabase.co/functions/v1/instagram";
+let KEY = "";
+try { KEY = localStorage.getItem("ig_key") || ""; } catch (e) {}
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (d) => new Date(d).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" });
+
+async function api(body) {
+  const r = await fetch(FN, { method: "POST", headers: { "content-type": "application/json", "x-admin-key": KEY }, body: JSON.stringify(body) });
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(j.error || ("Error " + r.status));
+  return j;
+}
+function say(id, text, kind) { const el = $(id); el.textContent = text || ""; el.className = "msg " + (kind || ""); }
+
+async function load() {
+  const d = await api({ action: "list" });
+  renderPosts(d.posts); renderComments(d.comments); renderMessages(d.messages);
+}
+function renderPosts(list) {
+  $("posts").innerHTML = list.length ? list.map((p) => `
+    <div class="card">
+      <div class="row" style="align-items:flex-start">
+        ${p.media_type === "IMAGE" ? `<img class="thumb" src="${esc(p.media_url)}" alt="">` : ""}
+        <div style="flex:1;min-width:0">
+          <span class="badge b-${esc(p.status)}">${esc(p.status)}</span>
+          <div class="small">${esc(fmt(p.scheduled_at))} · ${esc(p.media_type)}</div>
+          <div>${esc((p.caption || "").slice(0, 120))}</div>
+          ${p.error ? `<div class="small" style="color:var(--err)">${esc(p.error)}</div>` : ""}
+        </div>
+      </div>
+      ${["pendiente", "error"].includes(p.status) ? `<div style="margin-top:8px"><button class="del" data-del="${p.id}">Eliminar</button></div>` : ""}
+    </div>`).join("") : '<p class="small">Todavía no hay publicaciones programadas.</p>';
+}
+function renderComments(list) {
+  $("comments").innerHTML = list.length ? list.map((c) => `
+    <div class="card">
+      <b>@${esc(c.username || "usuario")}</b> <span class="small">${esc(fmt(c.created_at))}</span>
+      <div>${esc(c.text)}</div>
+      ${c.replied ? `<div class="bubble out">${esc(c.reply_text)}</div>` : `
+        <textarea id="rc-${esc(c.ig_comment_id)}" placeholder="Tu respuesta…" style="margin-top:8px"></textarea>
+        <button data-rc="${esc(c.ig_comment_id)}" style="margin-top:6px">Responder</button>`}
+    </div>`).join("") : '<p class="small">Aún no hay comentarios.</p>';
+}
+function renderMessages(list) {
+  const by = {};
+  list.slice().reverse().forEach((m) => { (by[m.sender_id] = by[m.sender_id] || []).push(m); });
+  const ids = Object.keys(by);
+  $("messages").innerHTML = ids.length ? ids.map((id) => `
+    <div class="card">
+      <div class="small">Conversación con ${esc(id)}</div>
+      ${by[id].map((m) => `<div class="bubble ${m.direction === "out" ? "out" : "in"}">${esc(m.text)}</div>`).join("")}
+      <textarea id="rm-${esc(id)}" placeholder="Tu respuesta…" style="margin-top:8px"></textarea>
+      <button data-rm="${esc(id)}" style="margin-top:6px">Enviar</button>
+    </div>`).join("") : '<p class="small">Aún no hay mensajes.</p>';
+}
+
+$("enter").onclick = async () => {
+  KEY = $("key").value.trim();
+  if (!KEY) return say("loginMsg", "Escribe la clave.", "err");
+  say("loginMsg", "Entrando…");
+  try {
+    await load();
+    if ($("rem").checked) { try { localStorage.setItem("ig_key", KEY); } catch (e) {} }
+    $("login").classList.add("hide"); $("app").classList.remove("hide");
+  } catch (e) { say("loginMsg", e.message === "no autorizado" ? "Clave incorrecta." : e.message, "err"); }
+};
+$("logout").onclick = () => { try { localStorage.removeItem("ig_key"); } catch (e) {} location.reload(); };
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+  ["programar", "comentarios", "mensajes"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== b.dataset.t));
+});
+["reload1", "reload2", "reload3"].forEach((id) => $(id).onclick = () => load().catch((e) => alert(e.message)));
+$("runNow").onclick = async () => { try { await api({ action: "publish_due" }); await load(); } catch (e) { alert(e.message); } };
+$("addPost").onclick = async () => {
+  const url = $("murl").value.trim(), when = $("when").value;
+  if (!url || !when) return say("pMsg", "Falta el enlace o la fecha.", "err");
+  try {
+    await api({ action: "add_post", media_url: url, media_type: $("mtype").value, caption: $("cap").value, scheduled_at: new Date(when).toISOString() });
+    say("pMsg", "Programada.", "ok"); $("murl").value = ""; $("cap").value = ""; await load();
+  } catch (e) { say("pMsg", e.message, "err"); }
+};
+document.body.addEventListener("click", async (ev) => {
+  const t = ev.target;
+  try {
+    if (t.dataset.del) { if (confirm("¿Eliminar esta publicación?")) { await api({ action: "delete_post", id: Number(t.dataset.del) }); await load(); } }
+    if (t.dataset.rc) { const txt = $("rc-" + t.dataset.rc).value.trim(); if (txt) { await api({ action: "reply_comment", comment_id: t.dataset.rc, text: txt }); await load(); } }
+    if (t.dataset.rm) { const txt = $("rm-" + t.dataset.rm).value.trim(); if (txt) { await api({ action: "send_message", recipient_id: t.dataset.rm, text: txt }); await load(); } }
+  } catch (e) { alert(e.message); }
+});
+
+if (KEY) { $("key").value = KEY; $("rem").checked = true; $("enter").click(); }
+</script>
+</body>
+</html>
