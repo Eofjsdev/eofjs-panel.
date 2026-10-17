@@ -4,37 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Panel Eofjs · Instagram</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#642b96">
 <style>
 :root{--bg:#f3ebff;--card:#ffffff;--p:#642b96;--pt:#ffffff;--t:#241533;--m:#6f5f84;--line:#e2d5f2;--ok:#1f8a4c;--err:#c0392b;--warn:#b7791f}
 @media(prefers-color-scheme:dark){:root{--bg:#171021;--card:#241a33;--p:#b48be0;--pt:#171021;--t:#f1e9fb;--m:#a998bf;--line:#3a2b4f;--ok:#4cc27f;--err:#ff7a6b;--warn:#e6b450}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--t);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:12px 12px 80px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 h1{font-size:20px;margin:6px 0 12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
 label{display:block;font-size:13px;color:var(--m);margin:10px 0 4px}
 input,textarea,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--t);font:inherit}
+select option{color:#241533}
 textarea{min-height:80px;resize:vertical}
 button{background:var(--p);color:var(--pt);border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:600;cursor:pointer}
 button.sec{background:transparent;color:var(--p);border:1px solid var(--p)}
 button.del{background:transparent;color:var(--err);border:1px solid var(--err);padding:6px 10px;font-size:13px}
+button.mini{padding:6px 10px;font-size:13px}
 button:disabled{opacity:.5}
-.row{display:flex;gap:8px;align-items:center}
-.tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5}
-.tabs button{flex:1;background:transparent;color:var(--p);border:1px solid var(--p);padding:9px 4px;font-size:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5;overflow-x:auto}
+.tabs button{flex:0 0 auto;background:transparent;color:var(--p);border:1px solid var(--p);padding:9px 14px;font-size:14px}
 .tabs button.on{background:var(--p);color:var(--pt)}
 .msg{font-size:14px;margin:8px 0;min-height:18px}
 .msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
 .small{font-size:13px;color:var(--m)}
 .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
-.b-pendiente{color:var(--warn)}.b-publicado{color:var(--ok)}.b-error{color:var(--err)}.b-publicando{color:var(--m)}
+.b-pendiente{color:var(--warn)}.b-publicado{color:var(--ok)}.b-error{color:var(--err)}.b-publicando{color:var(--m)}.b-top{color:var(--ok)}
 .bubble{padding:8px 10px;border-radius:12px;margin:4px 0;max-width:88%;word-wrap:break-word}
 .in{background:var(--line)}.out{background:var(--p);color:var(--pt);margin-left:auto}
 img.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.vid{width:56px;height:56px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--m)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}
 .hide{display:none}
+.edit{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 </style>
 </head>
 <body>
-<h1>Panel Instagram · eofjs.dev</h1>
+<div class="top">
+  <h1>Panel Instagram · eofjs.dev</h1>
+  <button class="sec mini hide" id="install">Instalar app</button>
+</div>
 
 <div id="login" class="card">
   <label for="key">Clave de administrador (ADMIN_KEY)</label>
@@ -49,15 +64,22 @@ img.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px s
     <button data-t="programar" class="on">Programar</button>
     <button data-t="comentarios">Comentarios</button>
     <button data-t="mensajes">Mensajes</button>
+    <button data-t="respuestas">Auto</button>
+    <button data-t="stats">Stats</button>
   </div>
 
   <section id="t-programar">
     <div class="card">
-      <label for="murl">Enlace público de la imagen o video</label>
-      <input id="murl" type="url" placeholder="https://…/foto.jpg">
-      <p class="small">Debe ser un enlace directo y público (JPEG para fotos, MP4 para reels).</p>
-      <label for="mtype">Tipo</label>
-      <select id="mtype"><option value="IMAGE">Foto</option><option value="REELS">Reel (video)</option></select>
+      <label for="mkind">Qué quieres publicar</label>
+      <select id="mkind">
+        <option value="post">Publicación (una foto o un reel)</option>
+        <option value="story">Story</option>
+        <option value="carrusel">Carrusel (2 a 10 fotos o videos)</option>
+      </select>
+      <label for="mfile">Foto o video</label>
+      <input id="mfile" type="file" accept="image/*,video/*" multiple>
+      <div id="prev" class="small" style="margin-top:6px"></div>
+      <p class="small">Las fotos se convierten a JPEG. Los videos funcionan mejor en MP4. Máximo 50 MB por archivo. Las stories no llevan texto.</p>
       <label for="cap">Texto de la publicación</label>
       <textarea id="cap" placeholder="Escribe el texto…"></textarea>
       <label for="when">Fecha y hora</label>
@@ -83,6 +105,27 @@ img.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px s
     <div id="messages"></div>
   </section>
 
+  <section id="t-respuestas" class="hide">
+    <div class="card">
+      <p class="small">Cuando alguien escriba una de estas palabras, se responde solo. Puedes poner varias separadas por comas.</p>
+      <label for="rk">Palabra o palabras</label>
+      <input id="rk" placeholder="precio, costo, cuánto">
+      <label for="rr">Respuesta automática</label>
+      <textarea id="rr" placeholder="Hola, el precio es…"></textarea>
+      <label for="rs">Responder en</label>
+      <select id="rs"><option value="ambos">Mensajes y comentarios</option><option value="mensajes">Solo mensajes</option><option value="comentarios">Solo comentarios</option></select>
+      <div class="msg" id="rMsg"></div>
+      <button id="addRule">Agregar regla</button>
+    </div>
+    <div id="rules"></div>
+  </section>
+
+  <section id="t-stats" class="hide">
+    <button class="sec" id="loadStats" style="margin-bottom:8px">Cargar estadísticas</button>
+    <div class="msg" id="sMsg"></div>
+    <div id="stats"></div>
+  </section>
+
   <p style="text-align:center"><button class="sec" id="logout">Salir</button></p>
 </div>
 
@@ -93,6 +136,9 @@ try { KEY = localStorage.getItem("ig_key") || ""; } catch (e) {}
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (d) => new Date(d).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" });
+const pad = (n) => String(n).padStart(2, "0");
+const toLocalInput = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const KIND = { IMAGE: "Foto", REELS: "Reel", STORY: "Story", CAROUSEL: "Carrusel" };
 
 async function api(body) {
   const r = await fetch(FN, { method: "POST", headers: { "content-type": "application/json", "x-admin-key": KEY }, body: JSON.stringify(body) });
@@ -105,22 +151,45 @@ function say(id, text, kind) { const el = $(id); el.textContent = text || ""; el
 
 async function load() {
   const d = await api({ action: "list" });
-  renderPosts(d.posts); renderComments(d.comments); renderMessages(d.messages);
+  renderPosts(d.posts); renderComments(d.comments); renderMessages(d.messages); renderRules(d.rules || []);
 }
+
 function renderPosts(list) {
-  $("posts").innerHTML = list.length ? list.map((p) => `
+  $("posts").innerHTML = list.length ? list.map((p) => {
+    const items = Array.isArray(p.items) && p.items.length ? p.items : [{ url: p.media_url, type: p.media_type === "REELS" ? "VIDEO" : "IMAGE" }];
+    const first = items[0];
+    const thumb = first.type === "IMAGE" ? `<img class="thumb" src="${esc(first.url)}" alt="">` : `<div class="vid">Video</div>`;
+    const editable = ["pendiente", "error"].includes(p.status);
+    const label = (KIND[p.media_type] || p.media_type) + (p.media_type === "CAROUSEL" ? " (" + items.length + ")" : "");
+    return `
     <div class="card">
-      <div class="row" style="align-items:flex-start">
-        ${p.media_type === "IMAGE" ? `<img class="thumb" src="${esc(p.media_url)}" alt="">` : ""}
+      <div class="row" style="align-items:flex-start;flex-wrap:nowrap">
+        ${thumb}
         <div style="flex:1;min-width:0">
           <span class="badge b-${esc(p.status)}">${esc(p.status)}</span>
-          <div class="small">${esc(fmt(p.scheduled_at))} · ${esc(p.media_type)}</div>
+          <div class="small">${esc(fmt(p.scheduled_at))} · ${esc(label)}</div>
           <div>${esc((p.caption || "").slice(0, 120))}</div>
           ${p.error ? `<div class="small" style="color:var(--err)">${esc(p.error)}</div>` : ""}
         </div>
       </div>
-      ${["pendiente", "error"].includes(p.status) ? `<div style="margin-top:8px"><button class="del" data-del="${p.id}">Eliminar</button></div>` : ""}
-    </div>`).join("") : '<p class="small">Todavía no hay publicaciones programadas.</p>';
+      ${editable ? `
+      <div class="row" style="margin-top:8px">
+        <button class="sec mini" data-ed="${p.id}">Editar</button>
+        ${p.status === "error" ? `<button class="sec mini" data-rt="${p.id}">Reintentar</button>` : ""}
+        <button class="del" data-del="${p.id}">Eliminar</button>
+      </div>
+      <div class="edit hide" id="ed-${p.id}">
+        <label>Texto</label>
+        <textarea id="edc-${p.id}">${esc(p.caption || "")}</textarea>
+        <label>Fecha y hora</label>
+        <input type="datetime-local" id="edw-${p.id}" value="${toLocalInput(p.scheduled_at)}">
+        <div class="row" style="margin-top:8px">
+          <button class="mini" data-sv="${p.id}" data-st="${esc(p.status)}">Guardar</button>
+          <button class="sec mini" data-cx="${p.id}">Cancelar</button>
+        </div>
+      </div>` : ""}
+    </div>`;
+  }).join("") : '<p class="small">Todavía no hay publicaciones programadas.</p>';
 }
 function renderComments(list) {
   $("comments").innerHTML = list.length ? list.map((c) => `
@@ -131,6 +200,18 @@ function renderComments(list) {
         <textarea id="rc-${esc(c.ig_comment_id)}" placeholder="Tu respuesta…" style="margin-top:8px"></textarea>
         <button data-rc="${esc(c.ig_comment_id)}" style="margin-top:6px">Responder</button>`}
     </div>`).join("") : '<p class="small">Aún no hay comentarios.</p>';
+}
+function renderRules(list) {
+  $("rules").innerHTML = list.length ? list.map((r) => `
+    <div class="card">
+      <b>${esc(r.keyword)}</b> <span class="badge ${r.active ? "b-publicado" : "b-publicando"}">${r.active ? "activa" : "pausada"}</span>
+      <div class="small">${esc(r.scope)}</div>
+      <div class="bubble out" style="margin:6px 0">${esc(r.reply)}</div>
+      <div class="row">
+        <button class="sec mini" data-tg="${r.id}" data-on="${r.active ? 1 : 0}">${r.active ? "Pausar" : "Activar"}</button>
+        <button class="del" data-dr="${r.id}">Eliminar</button>
+      </div>
+    </div>`).join("") : '<p class="small">Todavía no hay reglas.</p>';
 }
 function renderMessages(list) {
   const by = {};
@@ -143,6 +224,53 @@ function renderMessages(list) {
       <textarea id="rm-${esc(id)}" placeholder="Tu respuesta…" style="margin-top:8px"></textarea>
       <button data-rm="${esc(id)}" style="margin-top:6px">Enviar</button>
     </div>`).join("") : '<p class="small">Aún no hay mensajes.</p>';
+}
+function renderStats(d) {
+  const p = d.profile || {};
+  const media = (d.media || []).map((m) => {
+    const i = m.insights || {};
+    const score = i.reach != null ? i.reach : (m.like_count || 0) + (m.comments_count || 0);
+    return { ...m, score };
+  });
+  const best = media.length ? media.reduce((a, b) => (b.score > a.score ? b : a)) : null;
+  let html = `<div class="grid">
+    <div class="stat"><b>${esc(p.followers_count ?? "–")}</b><span class="small">Seguidores</span></div>
+    <div class="stat"><b>${esc(p.follows_count ?? "–")}</b><span class="small">Siguiendo</span></div>
+    <div class="stat"><b>${esc(p.media_count ?? "–")}</b><span class="small">Publicaciones</span></div>
+  </div>
+  <div class="card"><b>${esc(d.reach7 ?? "–")}</b> <span class="small">cuentas alcanzadas en los últimos 7 días</span>${d.reach_error ? `<div class="small" style="color:var(--err)">${esc(d.reach_error)}</div>` : ""}</div>`;
+  html += media.length ? media.map((m) => {
+    const i = m.insights || {};
+    const img = m.thumbnail_url || (m.media_type === "IMAGE" || m.media_type === "CAROUSEL_ALBUM" ? m.media_url : "");
+    return `<div class="card"><div class="row" style="align-items:flex-start;flex-wrap:nowrap">
+      ${img ? `<img class="thumb" src="${esc(img)}" alt="">` : `<div class="vid">Video</div>`}
+      <div style="flex:1;min-width:0">
+        ${best && m.id === best.id && m.score > 0 ? '<span class="badge b-top">Mejor</span> ' : ""}
+        <span class="small">${esc(fmt(m.timestamp))}</span>
+        <div>${esc((m.caption || "").slice(0, 80))}</div>
+        <div class="small">Me gusta ${esc(m.like_count ?? 0)} · Comentarios ${esc(m.comments_count ?? 0)}${i.reach != null ? " · Alcance " + esc(i.reach) : ""}${i.views != null ? " · Vistas " + esc(i.views) : ""}${i.saved != null ? " · Guardados " + esc(i.saved) : ""}${i.shares != null ? " · Compartidos " + esc(i.shares) : ""}</div>
+        ${m.permalink ? `<a class="small" href="${esc(m.permalink)}" target="_blank" rel="noopener">Ver en Instagram</a>` : ""}
+      </div></div></div>`;
+  }).join("") : '<p class="small">No se encontraron publicaciones.</p>';
+  $("stats").innerHTML = html;
+}
+
+async function toJpeg(file) {
+  const bmp = await createImageBitmap(file);
+  const c = document.createElement("canvas"); c.width = bmp.width; c.height = bmp.height;
+  c.getContext("2d").drawImage(bmp, 0, 0);
+  return await new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error("No se pudo convertir la foto")), "image/jpeg", 0.92));
+}
+async function uploadOne(f) {
+  const isVideo = f.type.startsWith("video/");
+  let blob = f, ext = (f.name.split(".").pop() || "bin");
+  if (!isVideo) { blob = await toJpeg(f); ext = "jpg"; }
+  if (blob.size > 50 * 1048576) throw new Error(f.name + " pesa más de 50 MB.");
+  const u = await api({ action: "upload_url", ext });
+  const fd = new FormData(); fd.append("cacheControl", "3600"); fd.append("", blob, "file." + ext);
+  const up = await fetch(u.signedUrl, { method: "PUT", body: fd });
+  if (!up.ok) throw new Error("No se pudo subir " + f.name + " (" + up.status + ")");
+  return { url: u.public_url, type: isVideo ? "VIDEO" : "IMAGE" };
 }
 
 $("enter").onclick = async () => {
@@ -158,26 +286,65 @@ $("enter").onclick = async () => {
 $("logout").onclick = () => { try { localStorage.removeItem("ig_key"); } catch (e) {} location.reload(); };
 document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
-  ["programar", "comentarios", "mensajes"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["programar", "comentarios", "mensajes", "respuestas", "stats"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== b.dataset.t));
 });
 ["reload1", "reload2", "reload3"].forEach((id) => $(id).onclick = () => load().catch((e) => alert(e.message)));
-$("runNow").onclick = async () => { try { await api({ action: "publish_due" }); await load(); } catch (e) { alert(e.message); } };
+$("runNow").onclick = async () => { try { await api({ action: "publish_due" }); say("pMsg", "Revisando publicaciones vencidas. Toca Actualizar en unos segundos.", "ok"); } catch (e) { alert(e.message); } };
+$("mfile").onchange = () => {
+  const fs = [...$("mfile").files];
+  $("prev").textContent = fs.length ? fs.map((f) => f.name + " (" + (f.size / 1048576).toFixed(1) + " MB)").join(", ") : "";
+};
+$("mkind").onchange = () => { $("cap").disabled = $("mkind").value === "story"; };
 $("addPost").onclick = async () => {
-  const url = $("murl").value.trim(), when = $("when").value;
-  if (!url || !when) return say("pMsg", "Falta el enlace o la fecha.", "err");
+  const files = [...$("mfile").files], when = $("when").value, kind = $("mkind").value;
+  if (!files.length || !when) return say("pMsg", "Elige archivos y la fecha.", "err");
+  if (kind === "carrusel" && (files.length < 2 || files.length > 10)) return say("pMsg", "Un carrusel necesita de 2 a 10 archivos.", "err");
+  if (kind !== "carrusel" && files.length !== 1) return say("pMsg", "Elige un solo archivo, o cambia a Carrusel.", "err");
+  const btn = $("addPost"); btn.disabled = true;
   try {
-    await api({ action: "add_post", media_url: url, media_type: $("mtype").value, caption: $("cap").value, scheduled_at: new Date(when).toISOString() });
-    say("pMsg", "Programada.", "ok"); $("murl").value = ""; $("cap").value = ""; await load();
+    const items = [];
+    for (let i = 0; i < files.length; i++) { say("pMsg", "Subiendo " + (i + 1) + " de " + files.length + "…"); items.push(await uploadOne(files[i])); }
+    const media_type = kind === "story" ? "STORY" : kind === "carrusel" ? "CAROUSEL" : (items[0].type === "VIDEO" ? "REELS" : "IMAGE");
+    await api({ action: "add_post", media_url: items[0].url, media_type, items, caption: kind === "story" ? "" : $("cap").value, scheduled_at: new Date(when).toISOString() });
+    say("pMsg", "Programada.", "ok"); $("mfile").value = ""; $("prev").textContent = ""; $("cap").value = ""; await load();
   } catch (e) { say("pMsg", e.message, "err"); }
+  btn.disabled = false;
+};
+$("addRule").onclick = async () => {
+  const k = $("rk").value.trim(), r = $("rr").value.trim();
+  if (!k || !r) return say("rMsg", "Escribe la palabra y la respuesta.", "err");
+  try {
+    await api({ action: "add_rule", keyword: k, reply: r, scope: $("rs").value });
+    say("rMsg", "Regla agregada.", "ok"); $("rk").value = ""; $("rr").value = ""; await load();
+  } catch (e) { say("rMsg", e.message, "err"); }
+};
+$("loadStats").onclick = async () => {
+  say("sMsg", "Cargando…");
+  try { renderStats(await api({ action: "stats" })); say("sMsg", ""); } catch (e) { say("sMsg", e.message, "err"); }
 };
 document.body.addEventListener("click", async (ev) => {
   const t = ev.target;
   try {
+    if (t.dataset.ed) $("ed-" + t.dataset.ed).classList.toggle("hide");
+    if (t.dataset.cx) $("ed-" + t.dataset.cx).classList.add("hide");
+    if (t.dataset.sv) {
+      const id = t.dataset.sv;
+      await api({ action: "update_post", id: Number(id), caption: $("edc-" + id).value, scheduled_at: new Date($("edw-" + id).value).toISOString(), reset: t.dataset.st === "error" });
+      await load();
+    }
+    if (t.dataset.rt) { await api({ action: "update_post", id: Number(t.dataset.rt), reset: true }); await load(); }
+    if (t.dataset.dr) { if (confirm("¿Eliminar esta regla?")) { await api({ action: "delete_rule", id: Number(t.dataset.dr) }); await load(); } }
+    if (t.dataset.tg) { await api({ action: "toggle_rule", id: Number(t.dataset.tg), active: t.dataset.on !== "1" }); await load(); }
     if (t.dataset.del) { if (confirm("¿Eliminar esta publicación?")) { await api({ action: "delete_post", id: Number(t.dataset.del) }); await load(); } }
     if (t.dataset.rc) { const txt = $("rc-" + t.dataset.rc).value.trim(); if (txt) { await api({ action: "reply_comment", comment_id: t.dataset.rc, text: txt }); await load(); } }
     if (t.dataset.rm) { const txt = $("rm-" + t.dataset.rm).value.trim(); if (txt) { await api({ action: "send_message", recipient_id: t.dataset.rm, text: txt }); await load(); } }
   } catch (e) { alert(e.message); }
 });
+
+let deferred = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("install").classList.remove("hide"); });
+$("install").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("install").classList.add("hide"); };
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
 
 if (KEY) { $("key").value = KEY; $("rem").checked = true; $("enter").click(); }
 </script>
