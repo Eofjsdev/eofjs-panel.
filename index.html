@@ -107,11 +107,11 @@ img.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px s
 
   <section id="t-respuestas" class="hide">
     <div class="card">
-      <p class="small">Cuando alguien escriba una de estas palabras, se responde solo. Puedes poner varias separadas por comas.</p>
+      <p class="small">Cuando alguien escriba una de estas palabras, se responde solo. Puedes poner varias separadas por comas. Escribe {usuario} en la respuesta y se cambia por el @ de la persona.</p>
       <label for="rk">Palabra o palabras</label>
       <input id="rk" placeholder="precio, costo, cuánto">
       <label for="rr">Respuesta automática</label>
-      <textarea id="rr" placeholder="Hola, el precio es…"></textarea>
+      <textarea id="rr" placeholder="Hola {usuario}, el precio es…"></textarea>
       <label for="rs">Responder en</label>
       <select id="rs"><option value="ambos">Mensajes y comentarios</option><option value="mensajes">Solo mensajes</option><option value="comentarios">Solo comentarios</option></select>
       <div class="msg" id="rMsg"></div>
